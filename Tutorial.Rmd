@@ -1,0 +1,145 @@
+---
+title: "Tutorial on the Least Squares Rating System"
+output:
+  pdf_document: default
+  html_notebook: default
+urlcolor: blue
+linkcolor: red
+---
+
+```{r, message=F, warning=F}
+library(data.table)
+```
+
+This R notebook is an exercise and an illustration of the mathematical [paper](https://www.tandfonline.com/doi/abs/10.1080/09332480.1995.11884566) of [Hal Stern](https://www.ics.uci.edu/~sternh/) at the journal [Chance](https://chance.amstat.org/). His paper is entitled "Who's Number 1 in College Football? ... And How Might We Decide?"
+
+# Load and inspect the data
+
+In this tutorial we are going to implement various algorithms related to the Least Squares Rating System. The data we need is as follows
+
+  * the schedule of season 1994.
+  * the ranking and ratings of the 107 Division 1-A teams.
+
+
+The data with the match schedule of season 1994.
+
+```{r}
+x = fread("./data/1994-season.csv")
+x
+```
+
+The ranking and ratings of the 107 Division 1-A teams
+
+```{r}
+r = fread("./data/1994-rankings.csv")
+r
+```
+
+
+Let us separate the top teams from the lower-divisional teams.
+
+```{r}
+teams = sort(unique(c(x$Winner, x$Loser)))
+top_teams = sort(unique(r$School))
+low_teams = setdiff(teams, top_teams)
+```
+
+
+# Examples 
+
+## Find the normal equations of the Least Squares Rating System with home advantage set to 3 points.
+
+The solution is provided in the source file
+
+
+```{r}
+source("lsq-functions.R")
+```
+
+```{r}
+l = lsq.system.ha(x, 3)
+l$game[1:10, 1:10]
+```
+## Solve the linear system and rank-order the teams according to rating
+
+Define the coefficients and parameters
+```{r}
+game = l$game; pd = l$pd; d = nrow(game)
+```
+
+
+Add a linear constraint to the system. 
+
+```{r}
+#all ratings sum to 0
+game[d, ] = rep(1,d) 
+pd[d] = 0
+#solve the linear system
+sol = solve(game,pd)
+```
+
+
+Let us now rank-order the teams and display their ratings.
+
+```{r}
+rorder = order(rank(sol[1:d]), decreasing = T)
+rankings = data.table(team = teams[rorder], rating = round(sol[rorder],2))
+rankings[1:10]
+```
+
+## Write a function that implements all of the above steps
+
+All these steps are implemented in `lsq.ratings.ha`.
+
+```{r}
+lsq.ratings.ha(x, 3)[1:10]
+```
+
+## Implement the Jackobi iteration method to solve a linear system and compare it with the built-in solver
+
+We have already implemented the Jacobi iteration as an example, which we load from source file.
+
+```{r}
+source("iter-methods.R")
+```
+
+We run the function `Jacobi`. It prints the number of iterations it makes in order to achieve the required tolerance level.
+
+```{r}
+sol.ja = Jackobi(game, pd)
+```
+In this case, the function made 99 iterations. Let us see the first five solutions
+
+```{r}
+sol.ja[1:5]
+```
+Let us compare them with the previous solution.
+
+```{r}
+sol[1:5]
+```
+
+# Problems about the LSqRatings
+
+## Modify the above rating system so that the mean rating of all lower-divisional teams is zero 
+
+## Modify the above rating system so that the rating of a particular team is zero 
+
+## Compute the LSqRatings and the home advantage from the data
+
+## Compute the LSqRatings and the home advantage from the data with all lower-divisional teams having rating exactly 0
+
+## Decompose the ratings in offence and defence parts
+
+## Compute the LSqRatings and the home advantage from the data with given weights for each match
+
+# Problems about iterative numerical computation of linear systems
+
+## Implement the Jackobi algorithm and solve some of the above systems
+
+## Implement the Gauss-Seidel algorithm and solve some of the above systems
+
+
+
+
+

@@ -72,7 +72,7 @@ Add a linear constraint to the system.
 
 ```{r}
 #all ratings sum to 0
-game[d, ] = rep(1,d) 
+game[d, ] = rep(1,d) # 
 pd[d] = 0
 #solve the linear system
 sol = solve(game,pd)
@@ -82,9 +82,9 @@ sol = solve(game,pd)
 Let us now rank-order the teams and display their ratings.
 
 ```{r}
-rorder = order(rank(sol[1:d]), decreasing = T)
+rorder = order(rank(sol), decreasing = T)
 rankings = data.table(team = teams[rorder], rating = round(sol[rorder],2))
-rankings[1:10]
+rankings
 ```
 
 ## Write a function that implements all of the above steps
@@ -106,7 +106,7 @@ source("iter-methods.R")
 We run the function `Jacobi`. It prints the number of iterations it makes in order to achieve the required tolerance level.
 
 ```{r}
-sol.ja = Jackobi(game, pd)
+sol.ja = Jacobi(game, pd, tol = 0.000001, K = 200)
 ```
 In this case, the function made 99 iterations. Let us see the first five solutions
 
@@ -123,6 +123,25 @@ sol[1:5]
 
 ## Modify the above rating system so that the mean rating of all lower-divisional teams is zero 
 
+```{r}
+low_ix = match(low_teams, teams)
+#the ratings of all lower-divisional teams sum to 0
+game[d, ] = 0
+game[d, low_ix] = 1
+pd[d] = 0
+#solve the linear system
+sol.1 = solve(game,pd)
+```
+
+Let us now rank-order the teams and display their ratings.
+
+```{r}
+rorder.1 = order(rank(sol.1), decreasing = T)
+rankings.1 = data.table(team = teams[rorder.1], rating = round(sol.1[rorder.1],2))
+rankings.1
+```
+
+
 ## Modify the above rating system so that the rating of a particular team is zero 
 
 ## Compute the LSqRatings and the home advantage from the data
@@ -135,11 +154,7 @@ sol[1:5]
 
 # Problems about iterative numerical computation of linear systems
 
-## Implement the Jackobi algorithm and solve some of the above systems
+## Implement the Jacobi algorithm and solve some of the above systems
 
 ## Implement the Gauss-Seidel algorithm and solve some of the above systems
-
-
-
-
 
